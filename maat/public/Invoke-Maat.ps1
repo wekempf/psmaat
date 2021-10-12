@@ -6,11 +6,20 @@ function Invoke-Maat {
             'coupling', 'entity-churn', 'entity-effort', 'entity-ownership',
             'fragmentation', 'identity', 'main-dev', 'main-dev-by-revs',
             'refactoring-main-dev', 'revisions', 'soc', 'summary')] # 'messages', 
-        [string]$Report = 'authors',
-        [DateTime]$After
+        [string]$Report = 'summary',
+
+        [Parameter(Mandatory=$False)]
+        [DateTime]$After,
+
+        [Parameter(Mandatory=$False)]
+        [string]$FilePath
     )
     
     begin {
+        if (-not (Get-Command java -ErrorAction SilentlyContinue)) {
+            throw "Java is either not installed or not on the path. Please install a Java Runtime."
+        }
+
         $repoRoot = (Get-Location).Path
         while ($repoRoot -and -not (Test-Path (Join-Path $repoRoot '.git') -PathType Container)) {
             $repoRoot = Split-Path $repoRoot
@@ -36,9 +45,14 @@ function Invoke-Maat {
             Pop-Location
         }
         
-        java -jar $jar -l $logFile -c git2 -a $Report | ConvertFrom-Csv
-    }
-    
-    end {
+        $results = java -jar $jar -l $logFile -c git2 -a $Report |
+            ConvertFrom-Csv |
+            ForEach-Object { $_.pstypenames.Insert(0, "Maat$($Report.Replace('-', ''))"); $_ }
+
+        if ($FilePath) {
+            $results | Out-String -Width 4096 | Out-File -FilePath $FilePath
+        } else {
+            $results
+        }
     }
 }

@@ -5,7 +5,7 @@ $ModuleRoot = $PSScriptRoot
 
 # Dot source the files
 foreach ($import in @($Public + $Private)) {
-    Write-Host $import.fullname
+    Write-Verbose "Importing $($import.fullname)"
     try {
         . $import.fullname
     }
@@ -15,3 +15,6 @@ foreach ($import in @($Public + $Private)) {
 }
 
 Export-ModuleMember -Function $Public.Basename
+
+Set-Alias maat Invoke-Maat
+Export-ModuleMember -Alias maat
